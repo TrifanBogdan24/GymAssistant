@@ -1,0 +1,6 @@
+.dist/
+.pio/
+.vscode/
+lib/
+test/
+include/

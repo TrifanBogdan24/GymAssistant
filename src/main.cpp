@@ -2,6 +2,8 @@
 #include <SD.h>                           // SD module library
 #include <TMRpcm.h>                       // speaker control library  https://github.com/TMRh20/TMRpcm/archive/master.zip
 #include <LiquidCrystal_I2C.h>            // I2C LCD library
+#include <EnableInterrupt.h>
+
 
 // Pin indices
 #define PIN_SD_CHIP_SELECT 10
@@ -17,7 +19,7 @@
 
 
 /*
-song01.wav - Roman Jewels - Rolling
+song01.wav - Remember The Name (Official Video) - Fort Minor
 song02.wav - Moldavite - Crank it!
 song03.wav - NOES - Like a Boss
 song04.wav - Indila - Tourner Dans Le Vide
@@ -30,6 +32,8 @@ TMRpcm audio;
 
 volatile int volume = 4;
 volatile bool isPausePlayButtonPressed = false;
+volatile bool isPaused = false;
+volatile bool isChangedVolume = false;
 
 
 void decreaseVolume()
@@ -47,12 +51,15 @@ void increaseVolume()
 void play_pause()
 {
   isPausePlayButtonPressed = true;
+  audio.pause();
+  isPaused = !isPaused;
 }
 
 
 void nextSong()
 {
   song_index = (song_index + 1) % 4;
+  isPaused = false;
   
   if (song_index == 0) {
     audio.play("songs/song01.wav");
@@ -79,9 +86,11 @@ void setup() {
   pinMode(PIN_ECHO_1, INPUT);
   pinMode(PIN_ECHO_2, INPUT);
 
-  attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_VOLUME_DOWN), decreaseVolume, FALLING);
-  attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_VOLUME_UP), increaseVolume, FALLING); 
+  enableInterrupt(PIN_BUTTON_PLAY_PAUSE, play_pause, FALLING);
+  enableInterrupt(PIN_BUTTON_NEXT_SONG, nextSong, FALLING);
 
+  enableInterrupt(PIN_BUTTON_VOLUME_DOWN, decreaseVolume, FALLING);
+  enableInterrupt(PIN_BUTTON_VOLUME_UP, increaseVolume, FALLING);
 
   audio.speakerPin = PIN_SPEAKER;
 
@@ -107,51 +116,23 @@ void setup() {
 
 
 void loop() {
-  digitalWrite(PIN_TRIGGER, LOW);
-  delayMicroseconds(2);
   digitalWrite(PIN_TRIGGER, HIGH);
   delayMicroseconds(10);
   digitalWrite(PIN_TRIGGER, LOW);
   long duration1 = pulseIn(PIN_ECHO_1, HIGH);
 
-  digitalWrite(PIN_TRIGGER, LOW);
-  delayMicroseconds(2);
   digitalWrite(PIN_TRIGGER, HIGH);
   delayMicroseconds(10);
   digitalWrite(PIN_TRIGGER, LOW);
+
   long duration2 = pulseIn(PIN_ECHO_2, HIGH);
 
 
  
-  long distance1 = (duration1/2) / 29.1;
-  long distance2 = (duration2/2) / 29.1;
+  long distance1 = duration1 / 58.31;
+  long distance2 = duration2 / 58.31;
 
-  /*
-  Serial.print("Distance senzor 1: ");
-  Serial.print(distance1);
-  Serial.print("cm; distance senzor 2: ");
-  Serial.print(distance2);
-  Serial.print("cm");
-  Serial.println();
-  */
 
-  if (digitalRead(PIN_BUTTON_PLAY_PAUSE) == LOW) {
-    audio.pause();
-  }
-  if (digitalRead(PIN_BUTTON_NEXT_SONG) == LOW) {
-    song_index = (song_index + 1) % 4;
-  
-    if (song_index == 0) {
-      audio.play("songs/song01.wav");
-    } else if (song_index == 1) {
-      audio.play("songs/song02.wav");
-    } else if (song_index == 2) {
-      audio.play("songs/song03.wav");
-    } else if (song_index == 3) {
-      audio.play("songs/song04.wav");
-    }
-
-  }
 
 
 

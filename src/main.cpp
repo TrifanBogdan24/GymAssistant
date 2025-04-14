@@ -5,6 +5,9 @@
 #include <EnableInterrupt.h>
 
 
+#define MIN_VOLUME 0
+#define MAX_VOLUME 6
+
 // Pin indices
 #define PIN_SD_CHIP_SELECT 10
 #define PIN_BUTTON_VOLUME_DOWN 2
@@ -31,27 +34,26 @@ LiquidCrystal_I2C lcd(0x27,20,4);
 TMRpcm audio;
 
 volatile int volume = 4;
-volatile bool isPausePlayButtonPressed = false;
 volatile bool isPaused = false;
-volatile bool isChangedVolume = false;
-
+volatile bool isPausePlayButton = false;
+volatile bool isChangeVolumeButton = false;
+volatile bool isNextSongButton = false;
 
 void decreaseVolume()
 {
-  volume = max(volume - 1, 0);
-  audio.setVolume(volume);
+  volume = (volume - 1 > MIN_VOLUME) ? (volume - 1) : MIN_VOLUME;
+  isChangeVolumeButton = true;
 }
 
 void increaseVolume()
 {
-  volume = min(volume + 1, 6);
-  audio.setVolume(volume);
+  volume = (volume + 1 < MAX_VOLUME) ? (volume + 1) : MAX_VOLUME;
+  isChangeVolumeButton = true;
 }
 
 void play_pause()
 {
-  isPausePlayButtonPressed = true;
-  audio.pause();
+  isPausePlayButton = true;
   isPaused = !isPaused;
 }
 
@@ -60,16 +62,7 @@ void nextSong()
 {
   song_index = (song_index + 1) % 4;
   isPaused = false;
-  
-  if (song_index == 0) {
-    audio.play("songs/song01.wav");
-  } else if (song_index == 1) {
-    audio.play("songs/song02.wav");
-  } else if (song_index == 2) {
-    audio.play("songs/song03.wav");
-  } else if (song_index == 3) {
-    audio.play("songs/song04.wav");
-  }
+  isNextSongButton = true;
 }
 
 
@@ -134,7 +127,27 @@ void loop() {
 
 
 
+  if (isChangeVolumeButton) {
+    audio.setVolume(volume);
+  }
+  if (isPausePlayButton) {
+    audio.pause();
+  }
+  if (isNextSongButton) {
+    if (song_index == 0) {
+      audio.play("songs/song01.wav");
+    } else if (song_index == 1) {
+      audio.play("songs/song02.wav");
+    } else if (song_index == 2) {
+      audio.play("songs/song03.wav");
+    } else if (song_index == 3) {
+      audio.play("songs/song04.wav");
+    }
+  }
 
 
+  isChangeVolumeButton = false;
+  isPausePlayButton = false;
+  isNextSongButton = false;
   delay(50);
 }

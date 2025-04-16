@@ -125,7 +125,11 @@ void loop() {
   long distance1 = duration1 / 58.31;
   long distance2 = duration2 / 58.31;
 
-
+  Serial.print("Senzor 1: ");
+  Serial.print(distance1);
+  Serial.print(" cm ; senzor 2: ");
+  Serial.print(distance2);
+  Serial.println(" cm");
 
   if (isChangeVolumeButton) {
     audio.setVolume(volume);
